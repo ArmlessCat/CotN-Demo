@@ -7,40 +7,89 @@ export default class Demo extends Phaser.Scene
         super('demo');
     }
 
+    player: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody;
+
     preload ()
     {
-        this.load.image('logo', 'assets/phaser3-logo.png');
-        this.load.image('libs', 'assets/libs.png');
-        this.load.glsl('bundle', 'assets/plasma-bundle.glsl.js');
-        this.load.glsl('stars', 'assets/starfields.glsl.js');
+        this.load.image('background', 'assets/background.png');
+        this.load.spritesheet('dude', 
+            'assets/dude.png',
+            { frameWidth: 32, frameHeight: 48 }
+        );
     }
 
     create ()
     {
-        this.add.shader('RGB Shift Field', 0, 0, 800, 600).setOrigin(0);
+        // this.add.image(400, 300, 'sky');
+        this.add.image(0, 0, 'background').setOrigin(0);
 
-        this.add.shader('Plasma', 0, 412, 800, 172).setOrigin(0);
+        // Initialize player in the middle of a square (75 x 75)
+        this.player = this.physics.add.sprite(21, 13, 'dude').setOrigin(0);
 
-        this.add.image(400, 300, 'libs');
+        this.createPlayerAnimations(this);
+    }
 
-        const logo = this.add.image(400, 70, 'logo');
-
-        this.tweens.add({
-            targets: logo,
-            y: 350,
-            duration: 1500,
-            ease: 'Sine.inOut',
-            yoyo: true,
+    createPlayerAnimations(scene)
+    {
+        scene.anims.create({
+            key: 'left',
+            frames: scene.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
             repeat: -1
-        })
+        });
+
+        scene.anims.create({
+            key: 'turn',
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
+        });
+
+        scene.anims.create({
+            key: 'right',
+            frames: scene.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+    }
+
+    update ()
+    {
+        var cursors = this.input.keyboard.createCursorKeys();
+
+        if (cursors.left.isDown)
+        {
+            this.player.setVelocityX(-160);
+
+            this.player.anims.play('left', true);
+        }
+        else if (cursors.right.isDown)
+        {
+            this.player.setVelocityX(160);
+
+            this.player.anims.play('right', true);
+        }
+        else
+        {
+            this.player.setVelocityX(0);
+
+            this.player.anims.play('turn');
+        }
+
+        if (cursors.up.isDown && this.player.body.touching.down)
+        {
+            this.player.setVelocityY(-500);
+        }
     }
 }
 
 const config = {
     type: Phaser.AUTO,
     backgroundColor: '#125555',
-    width: 800,
+    width: 600,
     height: 600,
+    physics: {
+        default: 'arcade'
+    },
     scene: Demo
 };
 
