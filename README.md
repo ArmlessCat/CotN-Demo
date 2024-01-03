@@ -1,7 +1,13 @@
 # CotN Demo
 
-## ToDo
-- [] ssdf
+## Work Items
+- [ ] Pick new background music, map out beats
+- [ ] Check for beat collisions on player movements
+- [ ] Add training dummy enemy
+
+## Bugs
+- [ ] Limit player movement, one square per key press
+- [ ] Prevent player from moving off the board
 
 ## Requirements
 
