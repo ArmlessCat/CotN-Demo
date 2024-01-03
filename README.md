@@ -3,6 +3,7 @@
 ## Work Items
 - [ ] Pick new background music, map out beats
 - [ ] Check for beat collisions on player movements
+- [ ] Create GameBoard for board state management
 - [ ] Add training dummy enemy
 
 ## Bugs
