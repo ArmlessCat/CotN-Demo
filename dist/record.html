@@ -1,0 +1,42 @@
+<audio style="display:none" controls src="galactic_dancing.ogg"></audio>
+<button onclick="startRecord()">Start</button>
+<button onclick="stopRecord()">Stop</button>
+
+<br>
+<textarea style="width:100%;height:50%"></textarea>
+<br><br>
+<b>USAGE</b>:<br>
+Press the "START" button, then tap any key (es. spacebar) to record the note timestamp
+
+<script>
+    // The goal is: playback the song and record notes on-the-fly
+    let isRecording = false;
+    let startTime = null;
+    let timestamps = [];
+    let audio = document.querySelector("audio");
+    let ta = document.querySelector("textarea");
+
+    function startRecord() {
+        timestamps = [];
+        isRecording = true;
+        startTime = Date.now();
+        audio.currentTime = 0;
+        audio.play();
+    }
+
+    function stopRecord() {
+        ta.value = JSON.stringify(timestamps);
+        audio.pause();
+        isRecording = false;
+    }
+
+    window.addEventListener("keydown", function (event) {
+        if (isRecording) {
+            let t = {};
+            t.timestamp = Date.now() - startTime;
+            timestamps.push(t);
+            ta.value = JSON.stringify(timestamps);
+        }
+    });
+
+</script>
