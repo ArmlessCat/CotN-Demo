@@ -265,10 +265,10 @@ export default class Demo extends Phaser.Scene
     spawnNote()
     {
         // This is self explanatory. Spawn the note and let it fall to the bottom.
-        let note = this.add.circle(WINDOW_WIDTH, 570, 20, 0xffff00);
+        let note = this.add.circle(WINDOW_WIDTH, WINDOW_HEIGHT - 30, 20, 0xffff00);
         this.notesSpawned.push(note);
         this.physics.add.existing(note);
-        this.physics.moveTo(note, 0, 570, null, this.timeToMove);
+        this.physics.moveTo(note, 0, WINDOW_HEIGHT - 30, null, this.timeToMove);
     }
 
     checkNoteCollisions()
@@ -300,7 +300,7 @@ export default class Demo extends Phaser.Scene
 }
 
 const WINDOW_WIDTH = 600;
-const WINDOW_HEIGHT = 600;
+const WINDOW_HEIGHT = 700;
 
 const config = {
     type: Phaser.AUTO,
