@@ -48,6 +48,7 @@ export default class Demo extends Phaser.Scene
     {
         // Initialize board
         this.add.image(0, 0, 'background').setOrigin(0);
+        this.board = [];
         for (let i = 0; i < NUMBER_OF_SQUARES; i++)
         {
             this.board[i] = [];

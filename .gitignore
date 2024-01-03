@@ -11,3 +11,7 @@ node_modules/
 
 # Build
 /npm-debug.log
+
+# JS files created at compile time
+dist/*.js
+dist/*.js.map
