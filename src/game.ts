@@ -1,6 +1,4 @@
 import * as Phaser from 'phaser';
-type Sprite = Phaser.GameObjects.Sprite;
-type CursorKeys = Phaser.Types.Input.Keyboard.CursorKeys;
 type CollidableGameObject = Phaser.GameObjects.GameObject & {collided?: boolean}
 type Note = Phaser.GameObjects.GameObject & {timestamp?: number, spawned?: boolean}
 
@@ -15,10 +13,11 @@ export default class Demo extends Phaser.Scene
     board: Phaser.GameObjects.GameObject[][];
 
     // Player
-    player: Sprite;
+    player: Phaser.GameObjects.Sprite;
     isPlayerMoving: boolean;
-    isDirectionKeyDown: boolean;
-    currentPlayerDirection: integer;
+    isPlayerDirectionKeyDown: boolean;
+    currentPlayerDirection: MovementDirection;
+    lastPlayerDirection: MovementDirection;
     pixelsLeftInCurrentMovement: integer;
 
     // Sound management
@@ -61,10 +60,11 @@ export default class Demo extends Phaser.Scene
         // Initialize player
         this.player = this.add.sprite(21, 13, 'dude').setOrigin(0); // middle of a square (75 x 75)
         this.createPlayerAnimations(this);
-        this.player.anims.play('turn');
+        this.player.anims.play(MovementDirection.NONE);
         this.isPlayerMoving = false;
-        this.isDirectionKeyDown = false;
+        this.isPlayerDirectionKeyDown = false;
         this.currentPlayerDirection = MovementDirection.NONE;
+        this.lastPlayerDirection = MovementDirection.NONE;
         this.pixelsLeftInCurrentMovement = 0;
 
         // Initialize sound
@@ -96,28 +96,43 @@ export default class Demo extends Phaser.Scene
     createPlayerAnimations(scene: Phaser.Scene)
     {
         scene.anims.create({
-            key: 'left',
+            key: MovementDirection.LEFT,
             frames: scene.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
             frameRate: 10,
             repeat: -1
         });
 
         scene.anims.create({
-            key: 'turn',
-            frames: [ { key: 'dude', frame: 4 } ],
-            frameRate: 20
-        });
-
-        scene.anims.create({
-            key: 'right',
+            key: MovementDirection.UP,
             frames: scene.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
             frameRate: 10,
             repeat: -1
+        });
+
+        scene.anims.create({
+            key: MovementDirection.RIGHT,
+            frames: scene.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        scene.anims.create({
+            key: MovementDirection.DOWN,
+            frames: scene.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
+            frameRate: 10,
+            repeat: -1
+        });
+
+        scene.anims.create({
+            key: MovementDirection.NONE,
+            frames: [ { key: 'dude', frame: 4 } ],
+            frameRate: 20
         });
     }
 
     update ()
     {
+        // Player management
         this.updatePlayer();
 
         // Sound management
@@ -135,62 +150,90 @@ export default class Demo extends Phaser.Scene
     updatePlayer()
     {
         var cursors = this.input.keyboard.createCursorKeys();
-        var keyDown = null;
-        if (cursors.left.isDown)
-        {
-            keyDown = MovementDirection.LEFT;
+        if (cursors.right.isDown){
+            console.log("RIGHT key is down");
         }
-        else if (cursors.right.isDown)
+        let currentMovementCursorKey = this.GetCursorKeyForMovementDirection(cursors);
+        if (this.isPlayerDirectionKeyDown && currentMovementCursorKey && currentMovementCursorKey.isUp)
         {
-            keyDown = MovementDirection.DOWN;
-        }
-        else if (cursors.up.isDown)
-        {
-            keyDown = MovementDirection.UP;
-        }
-        else if (cursors.down.isDown)
-        {
-            keyDown = MovementDirection.DOWN;
+            console.log("Movement key lifted");
+            this.isPlayerDirectionKeyDown = false;
         }
 
-        // Start moving in a new direction
-        if (!this.isPlayerMoving && keyDown != null && keyDown != this.currentPlayerDirection)
-        {
-            this.isPlayerMoving = true;
-            this.updatePlayerDirection(cursors);
-        }
-
-        //If moving, continue moving in the direction
+        // Do not change the player's direction if player is currently moving
         if (this.isPlayerMoving)
         {
             this.movePlayer();
+            return;
+        }
+
+        // Do not continue moving if the same direction key is still held down
+        if (this.isPlayerDirectionKeyDown)
+        {
+            return;
+        }
+
+        let playerDirection: MovementDirection = MovementDirection.NONE;
+        if (cursors.left.isDown)
+        {
+            playerDirection = MovementDirection.LEFT;
+        }
+        else if (cursors.right.isDown)
+        {
+            playerDirection = MovementDirection.RIGHT;
+        }
+        else if (cursors.up.isDown)
+        {
+            playerDirection = MovementDirection.UP;
+        }
+        else if (cursors.down.isDown)
+        {
+            playerDirection = MovementDirection.DOWN;
+        }
+
+        // Start moving in a new direction
+        if (playerDirection != MovementDirection.NONE)
+        {
+            this.isPlayerMoving = true;
+            this.isPlayerDirectionKeyDown = true;
+            this.updatePlayerDirection(playerDirection);
         }
     }
 
-    updatePlayerDirection(keysDown: CursorKeys)
+    GetCursorKeyForMovementDirection(cursors: Phaser.Types.Input.Keyboard.CursorKeys): Phaser.Input.Keyboard.Key
+    {
+        let movementDirection = this.currentPlayerDirection == MovementDirection.NONE ? this.lastPlayerDirection : this.currentPlayerDirection;
+
+        if (movementDirection == MovementDirection.LEFT)
+        {
+            return cursors.left;
+        }
+
+        if (movementDirection == MovementDirection.UP)
+        {
+            return cursors.up;
+        }
+
+        if (movementDirection == MovementDirection.RIGHT)
+        {
+            return cursors.right;
+        }
+
+        if (movementDirection == MovementDirection.DOWN)
+        {
+            return cursors.down;
+        }
+
+        return undefined;
+    }
+
+    updatePlayerDirection(newPlayerDirection: MovementDirection)
     {
         this.pixelsLeftInCurrentMovement = PIXELS_TO_MOVE;
 
-        if (keysDown.left.isDown)
-        {
-            this.currentPlayerDirection = MovementDirection.LEFT;
-            this.player.anims.play('left', true);
-        }
-        else if (keysDown.right.isDown)
-        {
-            this.currentPlayerDirection = MovementDirection.RIGHT;
-            this.player.anims.play('right', true);
-        }
-        else if (keysDown.up.isDown)
-        {
-            this.currentPlayerDirection = MovementDirection.UP;
-            this.player.anims.play('left', true);
-        }
-        else if (keysDown.down.isDown)
-        {
-            this.currentPlayerDirection = MovementDirection.DOWN;
-            this.player.anims.play('right', true);
-        }
+        this.currentPlayerDirection = newPlayerDirection;
+
+        this.player.anims.play(newPlayerDirection, true);
     }
 
     movePlayer()
@@ -198,8 +241,9 @@ export default class Demo extends Phaser.Scene
         if (this.pixelsLeftInCurrentMovement <= 0)
         {
             this.isPlayerMoving = false;
+            this.lastPlayerDirection = this.currentPlayerDirection;
             this.currentPlayerDirection = MovementDirection.NONE;
-            this.player.anims.play('turn');
+            this.player.anims.play(MovementDirection.NONE);
             return;
         }
 
@@ -280,7 +324,6 @@ export default class Demo extends Phaser.Scene
 
     spawnNote()
     {
-        // This is self explanatory. Spawn the note and let it fall to the bottom.
         let note = this.add.circle(WINDOW_WIDTH, WINDOW_HEIGHT - 30, 20, 0xffff00);
         this.notesSpawned.push(note);
         this.physics.add.existing(note);
@@ -338,12 +381,12 @@ const MOVEMENT_SPEED = 10;
 const NUMBER_OF_SQUARES = 8;
 const PIXELS_TO_MOVE = 75;
 
-const MovementDirection = {
-    'NONE': 0,
-    'UP': 1,
-    'LEFT': 2,
-    'RIGHT': 3,
-    'DOWN': 4
+enum MovementDirection {
+    NONE = "NONE",
+    UP = "UP",
+    LEFT = "LEFT",
+    RIGHT = "RIGHT",
+    DOWN = "DOWN"
 }
 
 const game = new Phaser.Game(config);
