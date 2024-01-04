@@ -1,14 +1,14 @@
 # CotN Demo
 
 ## Work Items
-- [ ] Pick new background music, map out beats
-- [ ] Check for beat collisions on player movements
-- [ ] Create GameBoard for board state management
-- [ ] Add training dummy enemy
+- Pick new background music, map out beats
+- Check for beat collisions on player movements
+- Create GameBoard for board state management
+- Add training dummy enemy
 
 ## Bugs
-- [x] Limit player movement, one square per key press
-- [ ] Prevent player from moving off the board
+- ~Limit player movement, one square per key press~
+- Prevent player from moving off the board
 
 ## Requirements
 
