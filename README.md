@@ -8,7 +8,7 @@
 
 ## Bugs
 - ~Limit player movement, one square per key press~
-- Prevent player from moving off the board
+- ~Prevent player from moving off the board~
 
 ## Requirements
 
