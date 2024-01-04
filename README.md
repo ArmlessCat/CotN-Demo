@@ -7,7 +7,7 @@
 - [ ] Add training dummy enemy
 
 ## Bugs
-- [ ] Limit player movement, one square per key press
+- [x] Limit player movement, one square per key press
 - [ ] Prevent player from moving off the board
 
 ## Requirements
