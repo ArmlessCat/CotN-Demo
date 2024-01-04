@@ -1,6 +1,7 @@
 import * as Phaser from 'phaser';
 type CollidableGameObject = Phaser.GameObjects.GameObject & {collided?: boolean}
 type Note = Phaser.GameObjects.GameObject & {timestamp?: number, spawned?: boolean}
+type BoardPosition = {row: number, col: number}
 
 export default class Demo extends Phaser.Scene
 {
@@ -19,6 +20,7 @@ export default class Demo extends Phaser.Scene
     currentPlayerDirection: MovementDirection;
     lastPlayerDirection: MovementDirection;
     pixelsLeftInCurrentMovement: integer;
+    playerBoardPosition: BoardPosition
 
     // Sound management
     noteBar: Phaser.GameObjects.Rectangle;
@@ -90,7 +92,8 @@ export default class Demo extends Phaser.Scene
         this.colliders = [];
 
         // Add initial game objects to the board
-        this.board[0][0] = this.player;
+        this.playerBoardPosition = {row: 0, col: 0};
+        this.board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this.player;
     }
 
     createPlayerAnimations(scene: Phaser.Scene)
@@ -150,14 +153,15 @@ export default class Demo extends Phaser.Scene
     updatePlayer()
     {
         var cursors = this.input.keyboard.createCursorKeys();
-        if (cursors.right.isDown){
-            console.log("RIGHT key is down");
-        }
-        let currentMovementCursorKey = this.GetCursorKeyForMovementDirection(cursors);
-        if (this.isPlayerDirectionKeyDown && currentMovementCursorKey && currentMovementCursorKey.isUp)
+
+        // Check if the current/last player movement key has been lifted
+        if (this.isPlayerDirectionKeyDown)
         {
-            console.log("Movement key lifted");
-            this.isPlayerDirectionKeyDown = false;
+            let currentMovementCursorKey = this.getCursorKeyForMovementDirection(cursors);
+            if (currentMovementCursorKey && currentMovementCursorKey.isUp)
+            {
+                this.isPlayerDirectionKeyDown = false;
+            }
         }
 
         // Do not change the player's direction if player is currently moving
@@ -191,8 +195,8 @@ export default class Demo extends Phaser.Scene
             playerDirection = MovementDirection.DOWN;
         }
 
-        // Start moving in a new direction
-        if (playerDirection != MovementDirection.NONE)
+        // Start moving in a new direction, if they are able
+        if (playerDirection != MovementDirection.NONE && this.validatePlayerMovement(playerDirection))
         {
             this.isPlayerMoving = true;
             this.isPlayerDirectionKeyDown = true;
@@ -200,7 +204,7 @@ export default class Demo extends Phaser.Scene
         }
     }
 
-    GetCursorKeyForMovementDirection(cursors: Phaser.Types.Input.Keyboard.CursorKeys): Phaser.Input.Keyboard.Key
+    getCursorKeyForMovementDirection(cursors: Phaser.Types.Input.Keyboard.CursorKeys): Phaser.Input.Keyboard.Key
     {
         let movementDirection = this.currentPlayerDirection == MovementDirection.NONE ? this.lastPlayerDirection : this.currentPlayerDirection;
 
@@ -225,6 +229,53 @@ export default class Demo extends Phaser.Scene
         }
 
         return undefined;
+    }
+
+    validatePlayerMovement(playerDirection: MovementDirection): boolean
+    {
+        let proposedRowChange = 0, proposedColChange = 0;
+        if (playerDirection == MovementDirection.LEFT)
+        {
+            proposedColChange = -1;
+        } 
+        else if (playerDirection == MovementDirection.UP)
+        {
+            proposedRowChange = -1;
+        }
+        else if (playerDirection == MovementDirection.RIGHT)
+        {
+            proposedColChange = 1;
+        }
+        else if (playerDirection == MovementDirection.DOWN)
+        {
+            proposedRowChange = 1;
+        }
+
+        let proposedPlayerBoardPosition: BoardPosition = {row: this.playerBoardPosition.row + proposedRowChange, col: this.playerBoardPosition.col + proposedColChange};
+
+        if (proposedPlayerBoardPosition.row < 0 ||
+            proposedPlayerBoardPosition.row >= this.board.length ||
+            proposedPlayerBoardPosition.col < 0 ||
+            proposedPlayerBoardPosition.col >= this.board[0].length)
+        {
+            console.log("Invalid player movement");
+            return false;
+        }
+
+        let playerGameObject = this.board[this.playerBoardPosition.row][this.playerBoardPosition.col];
+
+        // Clear the board at the player's old position
+        this.board[this.playerBoardPosition.row][this.playerBoardPosition.col] = undefined;
+
+        // Assign the player game object to their new position
+        this.board[proposedPlayerBoardPosition.row][proposedPlayerBoardPosition.col] = playerGameObject;
+
+        // Update the stored player board position with their new location
+        this.playerBoardPosition = proposedPlayerBoardPosition;
+
+        console.log("Player position: row " + this.playerBoardPosition.row + ", col " + this.playerBoardPosition.col);
+
+        return true;
     }
 
     updatePlayerDirection(newPlayerDirection: MovementDirection)
