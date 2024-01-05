@@ -10,6 +10,9 @@ export default class Demo extends Phaser.Scene
         super('demo');
     }
 
+    // Game controls (keyboard keys)
+    cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
+
     // Board
     board: Phaser.GameObjects.GameObject[][];
 
@@ -47,6 +50,24 @@ export default class Demo extends Phaser.Scene
 
     create ()
     {
+        // Initialize cursor keys
+        this.cursorKeys = this.input.keyboard.createCursorKeys();
+        this.cursorKeys.space.on('down', () => {
+            this.startNoteCollision();
+        });
+        this.cursorKeys.left.on('down', () => {
+            this.startNoteCollision();
+        });
+        this.cursorKeys.up.on('down', () => {
+            this.startNoteCollision();
+        });
+        this.cursorKeys.right.on('down', () => {
+            this.startNoteCollision();
+        });
+        this.cursorKeys.down.on('down', () => {
+            this.startNoteCollision();
+        });
+
         // Initialize board
         this.add.image(0, 0, 'background').setOrigin(0);
         this.board = [];
@@ -139,7 +160,6 @@ export default class Demo extends Phaser.Scene
         this.updatePlayer();
 
         // Sound management
-        this.handlePlayerInput();
         this.spawnNotes();
         this.checkNoteCollisions();
     }
@@ -258,7 +278,6 @@ export default class Demo extends Phaser.Scene
             proposedPlayerBoardPosition.col < 0 ||
             proposedPlayerBoardPosition.col >= this.board[0].length)
         {
-            console.log("Invalid player movement");
             return false;
         }
 
@@ -272,8 +291,6 @@ export default class Demo extends Phaser.Scene
 
         // Update the stored player board position with their new location
         this.playerBoardPosition = proposedPlayerBoardPosition;
-
-        console.log("Player position: row " + this.playerBoardPosition.row + ", col " + this.playerBoardPosition.col);
 
         return true;
     }
@@ -321,37 +338,35 @@ export default class Demo extends Phaser.Scene
         this.pixelsLeftInCurrentMovement -= adjustedMovementSpeed;
     }
 
-    handlePlayerInput()
+    startNoteCollision()
     {
-        var cursors = this.input.keyboard.createCursorKeys();
-        if (cursors.space.isDown) {
-            // we create a new collider at the position of the red bar
-            let collider = this.add.rectangle(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 30, 20, 60, 0xaaaaff);
+        // we create a new collider at the position of the red bar
+        let collider = this.add.rectangle(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 30, 20, 60, 0xaaaaff);
 
-            // attach physics
-            let colliderWithPhysicsBody = this.physics.add.existing(collider) as CollidableGameObject;
+        // attach physics
+        let colliderWithPhysicsBody = this.physics.add.existing(collider) as CollidableGameObject;
+        colliderWithPhysicsBody.collided = false;
 
-            // little tween to grow
-            this.tweens.add({
-                targets: colliderWithPhysicsBody,
-                scale: 1.5,
-                duration: 100,
-                alpha: 0,
-                onComplete: () => {
-                    colliderWithPhysicsBody.destroy();
+        // little tween to grow
+        this.tweens.add({
+            targets: colliderWithPhysicsBody,
+            scale: 1.5,
+            duration: 100,
+            alpha: 0,
+            onComplete: () => {
+                colliderWithPhysicsBody.destroy();
 
-                    // If the collider did not hit a note, its a miss, so lets lower the score
-                    if (colliderWithPhysicsBody.collided != true) {
-                        this.cameras.main.shake(100, 0.01);
-                        // this.score -= 200;
-                        // this.updateScoreText();
-                    }
+                // If the collider did not hit a note, its a miss, so lets lower the score
+                if (colliderWithPhysicsBody.collided != true) {
+                    this.cameras.main.shake(100, 0.01);
+                    // this.score -= 200;
+                    // this.updateScoreText();
                 }
-            });
+            }
+        });
 
-            // add the collider to the list
-            this.colliders.push(colliderWithPhysicsBody);
-        }
+        // add the collider to the list
+        this.colliders.push(colliderWithPhysicsBody);
     }
 
     spawnNotes()
