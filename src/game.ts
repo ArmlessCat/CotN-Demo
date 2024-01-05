@@ -35,8 +35,10 @@ export default class Demo extends Phaser.Scene
     notesSpawned: Phaser.GameObjects.Arc[];
     musicStartTime: number;
     timeToMove: number;
-    score: number;
-    scoreText: Phaser.GameObjects.Text;
+    hitScore: number;
+    hitScoreText: Phaser.GameObjects.Text;
+    missScore: number;
+    missScoreText: Phaser.GameObjects.Text;
 
     preload ()
     {
@@ -106,9 +108,12 @@ export default class Demo extends Phaser.Scene
         this.song.play();
         this.musicStartTime = Date.now();
 
-        this.score = 0;
-        this.scoreText = this.add.text(0, WINDOW_HEIGHT - 100, this.score.toString(), { fontFamily: "arial", fontSize: "42px" });
-        this.scoreText.setStroke("#ff0000", 2);
+        this.hitScore = 0;
+        this.hitScoreText = this.add.text(0, WINDOW_HEIGHT - 100, this.hitScore.toString(), { fontFamily: "arial", fontSize: "42px" });
+        this.hitScoreText.setStroke("#00ff00", 2);
+        this.missScore = 0;
+        this.missScoreText = this.add.text(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 100, this.missScore.toString(), { fontFamily: "arial", fontSize: "42px" });
+        this.missScoreText.setStroke("#ff0000", 2);
 
         this.colliders = [];
 
@@ -358,9 +363,9 @@ export default class Demo extends Phaser.Scene
 
                 // If the collider did not hit a note, its a miss, so lets lower the score
                 if (colliderWithPhysicsBody.collided != true) {
-                    this.cameras.main.shake(100, 0.01);
-                    // this.score -= 200;
-                    // this.updateScoreText();
+                    // this.cameras.main.shake(100, 0.01);
+                    this.missScore += 1;
+                    this.updateMissScoreText();
                 }
             }
         });
@@ -413,14 +418,19 @@ export default class Demo extends Phaser.Scene
             this.notesSpawned.splice(this.notesSpawned.indexOf(note), 1);
 
             // increase the score and update the text
-            this.score += 100;
-            this.updateScoreText();
+            this.hitScore += 1;
+            this.updateHitScoreText();
         });
     }
 
-    updateScoreText()
+    updateHitScoreText()
     {
-        this.scoreText.text = this.score.toString();
+        this.hitScoreText.text = this.hitScore.toString();
+    }
+
+    updateMissScoreText()
+    {
+        this.missScoreText.text = this.missScore.toString();
     }
 }
 
