@@ -2,13 +2,14 @@
 
 ## Work Items
 - Pick new background music, map out beats
-- Check for beat collisions on player movements
-- Create GameBoard for board state management
+- Check for beat collisions on player movements, not just space bar
+- Create Board.ts for board state management
+- Create Player.ts for player state management
 - Add training dummy enemy
 
 ## Bugs
 - ~Limit player movement, one square per key press~
-- Prevent player from moving off the board
+- ~Prevent player from moving off the board~
 
 ## Requirements
 
