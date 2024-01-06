@@ -1,7 +1,9 @@
 import * as Phaser from 'phaser';
+import { Player } from './player';
+import * as Schemas from './schemas';
 type CollidableGameObject = Phaser.GameObjects.GameObject & {collided?: boolean}
 type Note = Phaser.GameObjects.GameObject & {timestamp?: number, spawned?: boolean}
-type BoardPosition = {row: number, col: number}
+// type BoardPosition = {row: number, col: number}
 
 export default class Demo extends Phaser.Scene
 {
@@ -17,13 +19,7 @@ export default class Demo extends Phaser.Scene
     board: Phaser.GameObjects.GameObject[][];
 
     // Player
-    player: Phaser.GameObjects.Sprite;
-    isPlayerMoving: boolean;
-    isPlayerDirectionKeyDown: boolean;
-    currentPlayerDirection: MovementDirection;
-    lastPlayerDirection: MovementDirection;
-    pixelsLeftInCurrentMovement: integer;
-    playerBoardPosition: BoardPosition
+    player: Player;
 
     // Sound management
     noteBar: Phaser.GameObjects.Rectangle;
@@ -73,28 +69,21 @@ export default class Demo extends Phaser.Scene
         // Initialize board
         this.add.image(0, 0, 'background').setOrigin(0);
         this.board = [];
-        for (let i = 0; i < NUMBER_OF_SQUARES; i++)
+        for (let i = 0; i < Schemas.NUMBER_OF_SQUARES; i++)
         {
             this.board[i] = [];
-            for (let j = 0; j < NUMBER_OF_SQUARES; j++)
+            for (let j = 0; j < Schemas.NUMBER_OF_SQUARES; j++)
             {
                 this.board[i][j] = undefined;
             }
         }
 
         // Initialize player
-        this.player = this.add.sprite(21, 13, 'dude').setOrigin(0); // middle of a square (75 x 75)
-        this.createPlayerAnimations(this);
-        this.player.anims.play(MovementDirection.NONE);
-        this.isPlayerMoving = false;
-        this.isPlayerDirectionKeyDown = false;
-        this.currentPlayerDirection = MovementDirection.NONE;
-        this.lastPlayerDirection = MovementDirection.NONE;
-        this.pixelsLeftInCurrentMovement = 0;
+        this.player = new Player(this, this.board);
 
         // Initialize sound
-        this.noteBar = this.add.rectangle(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 30, WINDOW_WIDTH, 10, 0xff0000);
-        this.noteCollisionBox = this.add.rectangle(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 30, 20, 60, 0xffff00);
+        this.noteBar = this.add.rectangle(Schemas.WINDOW_WIDTH / 2, Schemas.WINDOW_HEIGHT - 30, Schemas.WINDOW_WIDTH, 10, 0xff0000);
+        this.noteCollisionBox = this.add.rectangle(Schemas.WINDOW_WIDTH / 2, Schemas.WINDOW_HEIGHT - 30, 20, 60, 0xffff00);
         this.noteCollisionBox.setStrokeStyle(2, 0x00ff00);
         this.lastNoteIndex = 0;
 
@@ -109,244 +98,29 @@ export default class Demo extends Phaser.Scene
         this.musicStartTime = Date.now();
 
         this.hitScore = 0;
-        this.hitScoreText = this.add.text(0, WINDOW_HEIGHT - 100, this.hitScore.toString(), { fontFamily: "arial", fontSize: "42px" });
+        this.hitScoreText = this.add.text(0, Schemas.WINDOW_HEIGHT - 100, this.hitScore.toString(), { fontFamily: "arial", fontSize: "42px" });
         this.hitScoreText.setStroke("#00ff00", 2);
         this.missScore = 0;
-        this.missScoreText = this.add.text(WINDOW_WIDTH - 50, WINDOW_HEIGHT - 100, this.missScore.toString(), { fontFamily: "arial", fontSize: "42px" });
+        this.missScoreText = this.add.text(Schemas.WINDOW_WIDTH - 50, Schemas.WINDOW_HEIGHT - 100, this.missScore.toString(), { fontFamily: "arial", fontSize: "42px" });
         this.missScoreText.setStroke("#ff0000", 2);
 
         this.colliders = [];
-
-        // Add initial game objects to the board
-        this.playerBoardPosition = {row: 0, col: 0};
-        this.board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this.player;
-    }
-
-    createPlayerAnimations(scene: Phaser.Scene)
-    {
-        scene.anims.create({
-            key: MovementDirection.LEFT,
-            frames: scene.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        scene.anims.create({
-            key: MovementDirection.UP,
-            frames: scene.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        scene.anims.create({
-            key: MovementDirection.RIGHT,
-            frames: scene.anims.generateFrameNumbers('dude', { start: 5, end: 8 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        scene.anims.create({
-            key: MovementDirection.DOWN,
-            frames: scene.anims.generateFrameNumbers('dude', { start: 0, end: 3 }),
-            frameRate: 10,
-            repeat: -1
-        });
-
-        scene.anims.create({
-            key: MovementDirection.NONE,
-            frames: [ { key: 'dude', frame: 4 } ],
-            frameRate: 20
-        });
     }
 
     update ()
     {
         // Player management
-        this.updatePlayer();
+        this.player.updatePlayer();
 
         // Sound management
         this.spawnNotes();
         this.checkNoteCollisions();
     }
 
-    /*
-        Steps for player movement:
-        1) If player is not currently moving, check if movement key is down
-        2) Start player movement animation, move player sprite to the next square
-        3) When the player sprite moves one square, stop the animation at the resting position 
-    */
-    updatePlayer()
-    {
-        var cursors = this.input.keyboard.createCursorKeys();
-
-        // Check if the current/last player movement key has been lifted
-        if (this.isPlayerDirectionKeyDown)
-        {
-            let currentMovementCursorKey = this.getCursorKeyForMovementDirection(cursors);
-            if (currentMovementCursorKey && currentMovementCursorKey.isUp)
-            {
-                this.isPlayerDirectionKeyDown = false;
-            }
-        }
-
-        // Do not change the player's direction if player is currently moving
-        if (this.isPlayerMoving)
-        {
-            this.movePlayer();
-            return;
-        }
-
-        // Do not continue moving if the same direction key is still held down
-        if (this.isPlayerDirectionKeyDown)
-        {
-            return;
-        }
-
-        let playerDirection: MovementDirection = MovementDirection.NONE;
-        if (cursors.left.isDown)
-        {
-            playerDirection = MovementDirection.LEFT;
-        }
-        else if (cursors.right.isDown)
-        {
-            playerDirection = MovementDirection.RIGHT;
-        }
-        else if (cursors.up.isDown)
-        {
-            playerDirection = MovementDirection.UP;
-        }
-        else if (cursors.down.isDown)
-        {
-            playerDirection = MovementDirection.DOWN;
-        }
-
-        // Start moving in a new direction, if they are able
-        if (playerDirection != MovementDirection.NONE && this.validatePlayerMovement(playerDirection))
-        {
-            this.isPlayerMoving = true;
-            this.isPlayerDirectionKeyDown = true;
-            this.updatePlayerDirection(playerDirection);
-        }
-    }
-
-    getCursorKeyForMovementDirection(cursors: Phaser.Types.Input.Keyboard.CursorKeys): Phaser.Input.Keyboard.Key
-    {
-        let movementDirection = this.currentPlayerDirection == MovementDirection.NONE ? this.lastPlayerDirection : this.currentPlayerDirection;
-
-        if (movementDirection == MovementDirection.LEFT)
-        {
-            return cursors.left;
-        }
-
-        if (movementDirection == MovementDirection.UP)
-        {
-            return cursors.up;
-        }
-
-        if (movementDirection == MovementDirection.RIGHT)
-        {
-            return cursors.right;
-        }
-
-        if (movementDirection == MovementDirection.DOWN)
-        {
-            return cursors.down;
-        }
-
-        return undefined;
-    }
-
-    validatePlayerMovement(playerDirection: MovementDirection): boolean
-    {
-        let proposedRowChange = 0, proposedColChange = 0;
-        if (playerDirection == MovementDirection.LEFT)
-        {
-            proposedColChange = -1;
-        } 
-        else if (playerDirection == MovementDirection.UP)
-        {
-            proposedRowChange = -1;
-        }
-        else if (playerDirection == MovementDirection.RIGHT)
-        {
-            proposedColChange = 1;
-        }
-        else if (playerDirection == MovementDirection.DOWN)
-        {
-            proposedRowChange = 1;
-        }
-
-        let proposedPlayerBoardPosition: BoardPosition = {row: this.playerBoardPosition.row + proposedRowChange, col: this.playerBoardPosition.col + proposedColChange};
-
-        if (proposedPlayerBoardPosition.row < 0 ||
-            proposedPlayerBoardPosition.row >= this.board.length ||
-            proposedPlayerBoardPosition.col < 0 ||
-            proposedPlayerBoardPosition.col >= this.board[0].length)
-        {
-            return false;
-        }
-
-        let playerGameObject = this.board[this.playerBoardPosition.row][this.playerBoardPosition.col];
-
-        // Clear the board at the player's old position
-        this.board[this.playerBoardPosition.row][this.playerBoardPosition.col] = undefined;
-
-        // Assign the player game object to their new position
-        this.board[proposedPlayerBoardPosition.row][proposedPlayerBoardPosition.col] = playerGameObject;
-
-        // Update the stored player board position with their new location
-        this.playerBoardPosition = proposedPlayerBoardPosition;
-
-        return true;
-    }
-
-    updatePlayerDirection(newPlayerDirection: MovementDirection)
-    {
-        this.pixelsLeftInCurrentMovement = PIXELS_TO_MOVE;
-
-        this.currentPlayerDirection = newPlayerDirection;
-
-        this.player.anims.play(newPlayerDirection, true);
-    }
-
-    movePlayer()
-    {
-        if (this.pixelsLeftInCurrentMovement <= 0)
-        {
-            this.isPlayerMoving = false;
-            this.lastPlayerDirection = this.currentPlayerDirection;
-            this.currentPlayerDirection = MovementDirection.NONE;
-            this.player.anims.play(MovementDirection.NONE);
-            return;
-        }
-
-        // Do not move farther than the remaining pixels left
-        let adjustedMovementSpeed = Math.min(this.pixelsLeftInCurrentMovement, MOVEMENT_SPEED);
-
-        if (this.currentPlayerDirection == MovementDirection.LEFT)
-        {
-            this.player.x -= adjustedMovementSpeed;
-        }
-        else if (this.currentPlayerDirection == MovementDirection.RIGHT)
-        {
-            this.player.x += adjustedMovementSpeed;
-        }
-        else if (this.currentPlayerDirection == MovementDirection.UP)
-        {
-            this.player.y -= adjustedMovementSpeed;
-        }
-        else if (this.currentPlayerDirection == MovementDirection.DOWN)
-        {
-            this.player.y += adjustedMovementSpeed;
-        }
-
-        this.pixelsLeftInCurrentMovement -= adjustedMovementSpeed;
-    }
-
     startNoteCollision()
     {
         // we create a new collider at the position of the red bar
-        let collider = this.add.rectangle(WINDOW_WIDTH / 2, WINDOW_HEIGHT - 30, 20, 60, 0xaaaaff);
+        let collider = this.add.rectangle(Schemas.WINDOW_WIDTH / 2, Schemas.WINDOW_HEIGHT - 30, 20, 60, 0xaaaaff);
 
         // attach physics
         let colliderWithPhysicsBody = this.physics.add.existing(collider) as CollidableGameObject;
@@ -395,10 +169,10 @@ export default class Demo extends Phaser.Scene
 
     spawnNote()
     {
-        let note = this.add.circle(WINDOW_WIDTH, WINDOW_HEIGHT - 30, 20, 0xffff00);
+        let note = this.add.circle(Schemas.WINDOW_WIDTH, Schemas.WINDOW_HEIGHT - 30, 20, 0xffff00);
         this.notesSpawned.push(note);
         this.physics.add.existing(note);
-        this.physics.moveTo(note, 0, WINDOW_HEIGHT - 30, null, this.timeToMove);
+        this.physics.moveTo(note, 0, Schemas.WINDOW_HEIGHT - 30, null, this.timeToMove);
     }
 
     checkNoteCollisions()
@@ -434,14 +208,11 @@ export default class Demo extends Phaser.Scene
     }
 }
 
-const WINDOW_WIDTH = 600;
-const WINDOW_HEIGHT = 700;
-
 const config = {
     type: Phaser.AUTO,
     backgroundColor: '#125555',
-    width: WINDOW_WIDTH,
-    height: WINDOW_HEIGHT,
+    width: Schemas.WINDOW_WIDTH,
+    height: Schemas.WINDOW_HEIGHT,
     physics: {
         default: 'arcade',
         arcade: {
@@ -450,19 +221,5 @@ const config = {
     },
     scene: Demo
 };
-
-const MOVEMENT_SPEED = 10;
-
-// Size of each square (600 pixels / 8 squares)
-const NUMBER_OF_SQUARES = 8;
-const PIXELS_TO_MOVE = 75;
-
-enum MovementDirection {
-    NONE = "NONE",
-    UP = "UP",
-    LEFT = "LEFT",
-    RIGHT = "RIGHT",
-    DOWN = "DOWN"
-}
 
 const game = new Phaser.Game(config);
