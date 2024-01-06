@@ -3,9 +3,13 @@
 ## Work Items
 - Pick new background music, map out beats
 - ~Check for beat collisions on player movements, not just space bar~
-- Create Board.ts for board state management
+- Create BeatTracker.ts for beat management
 - ~Create Player.ts for player state management~
 - Add training dummy enemy
+- Create the main menu scene
+    - Start Game
+    - Settings
+    - Exit
 
 ## Bugs
 - ~Limit player movement, one square per key press~
