@@ -1,12 +1,12 @@
 import * as Phaser from 'phaser';
 import * as Schemas from './schemas';
 
-export class Player
+export class Player implements Schemas.Actor
 {
-    scene: Phaser.Scene;
+    level: Phaser.Scene;
     board: Phaser.GameObjects.GameObject[][];
 
-    player: Phaser.GameObjects.Sprite;
+    sprite: Phaser.GameObjects.Sprite;
     isPlayerMoving: boolean;
     isPlayerDirectionKeyDown: boolean;
     currentPlayerDirection: Schemas.MovementDirection;
@@ -19,12 +19,12 @@ export class Player
     constructor (scene: Phaser.Scene, board: Phaser.GameObjects.GameObject[][])
     {
         // Initialize properties to default/starting values
-        this.scene = scene;
+        this.level = scene;
         this.board = board;
 
-        this.player = this.scene.add.sprite(21, 13, this.playerSpriteName).setOrigin(0); // middle of a square (75 x 75)
+        this.sprite = this.level.add.sprite(21, 13, this.playerSpriteName).setOrigin(0); // middle of a square (75 x 75)
         this.createPlayerAnimations();
-        this.player.anims.play(Schemas.MovementDirection.NONE);
+        this.sprite.anims.play(Schemas.MovementDirection.NONE);
         this.isPlayerMoving = false;
         this.isPlayerDirectionKeyDown = false;
         this.currentPlayerDirection = Schemas.MovementDirection.NONE;
@@ -33,55 +33,55 @@ export class Player
 
         // Add the player to the board
         this.playerBoardPosition = {row: 0, col: 0};
-        board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this.player;
+        board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this.sprite;
     }
 
     createPlayerAnimations()
     {
-        this.scene.anims.create({
+        this.level.anims.create({
             key: Schemas.MovementDirection.LEFT,
-            frames: this.scene.anims.generateFrameNumbers(this.playerSpriteName, { start: 0, end: 3 }),
+            frames: this.level.anims.generateFrameNumbers(this.playerSpriteName, { start: 0, end: 3 }),
             frameRate: 10,
             repeat: -1
         });
 
-        this.scene.anims.create({
+        this.level.anims.create({
             key: Schemas.MovementDirection.UP,
-            frames: this.scene.anims.generateFrameNumbers(this.playerSpriteName, { start: 5, end: 8 }),
+            frames: this.level.anims.generateFrameNumbers(this.playerSpriteName, { start: 5, end: 8 }),
             frameRate: 10,
             repeat: -1
         });
 
-        this.scene.anims.create({
+        this.level.anims.create({
             key: Schemas.MovementDirection.RIGHT,
-            frames: this.scene.anims.generateFrameNumbers(this.playerSpriteName, { start: 5, end: 8 }),
+            frames: this.level.anims.generateFrameNumbers(this.playerSpriteName, { start: 5, end: 8 }),
             frameRate: 10,
             repeat: -1
         });
 
-        this.scene.anims.create({
+        this.level.anims.create({
             key: Schemas.MovementDirection.DOWN,
-            frames: this.scene.anims.generateFrameNumbers(this.playerSpriteName, { start: 0, end: 3 }),
+            frames: this.level.anims.generateFrameNumbers(this.playerSpriteName, { start: 0, end: 3 }),
             frameRate: 10,
             repeat: -1
         });
 
-        this.scene.anims.create({
+        this.level.anims.create({
             key: Schemas.MovementDirection.NONE,
             frames: [ { key: this.playerSpriteName, frame: 4 } ],
             frameRate: 20
         });
     }
 
-        /*
+    /*
         Steps for player movement:
         1) If player is not currently moving, check if movement key is down
         2) Start player movement animation, move player sprite to the next square
         3) When the player sprite moves one square, stop the animation at the resting position 
     */
-    updatePlayer()
+    update()
     {
-        var cursors = this.scene.input.keyboard.createCursorKeys();
+        var cursors = this.level.input.keyboard.createCursorKeys();
 
         // Check if the current/last player movement key has been lifted
         if (this.isPlayerDirectionKeyDown)
@@ -210,7 +210,7 @@ export class Player
 
         this.currentPlayerDirection = newPlayerDirection;
 
-        this.player.anims.play(newPlayerDirection, true);
+        this.sprite.anims.play(newPlayerDirection, true);
     }
 
     movePlayer()
@@ -220,7 +220,7 @@ export class Player
             this.isPlayerMoving = false;
             this.lastPlayerDirection = this.currentPlayerDirection;
             this.currentPlayerDirection = Schemas.MovementDirection.NONE;
-            this.player.anims.play(Schemas.MovementDirection.NONE);
+            this.sprite.anims.play(Schemas.MovementDirection.NONE);
             return;
         }
 
@@ -229,19 +229,19 @@ export class Player
 
         if (this.currentPlayerDirection == Schemas.MovementDirection.LEFT)
         {
-            this.player.x -= adjustedMovementSpeed;
+            this.sprite.x -= adjustedMovementSpeed;
         }
         else if (this.currentPlayerDirection == Schemas.MovementDirection.RIGHT)
         {
-            this.player.x += adjustedMovementSpeed;
+            this.sprite.x += adjustedMovementSpeed;
         }
         else if (this.currentPlayerDirection == Schemas.MovementDirection.UP)
         {
-            this.player.y -= adjustedMovementSpeed;
+            this.sprite.y -= adjustedMovementSpeed;
         }
         else if (this.currentPlayerDirection == Schemas.MovementDirection.DOWN)
         {
-            this.player.y += adjustedMovementSpeed;
+            this.sprite.y += adjustedMovementSpeed;
         }
 
         this.pixelsLeftInCurrentMovement -= adjustedMovementSpeed;
