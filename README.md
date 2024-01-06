@@ -4,7 +4,7 @@
 - Pick new background music, map out beats
 - ~Check for beat collisions on player movements, not just space bar~
 - Create Board.ts for board state management
-- Create Player.ts for player state management
+- ~Create Player.ts for player state management~
 - Add training dummy enemy
 
 ## Bugs
