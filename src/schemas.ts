@@ -1,3 +1,5 @@
+import { BeatTracker } from "./BeatTracker";
+
 export type BoardPosition = {row: number, col: number}
 export type CollidableGameObject = Phaser.GameObjects.GameObject & {collided?: boolean}
 export type Note = Phaser.GameObjects.GameObject & {timestamp?: number, spawned?: boolean}
@@ -35,4 +37,17 @@ export interface Actor extends Entity
 export interface Item extends Entity
 {
 
+}
+
+export interface Level
+{
+    map: Room[][];
+    beatTracker: BeatTracker;
+    entities: Entity[];
+}
+
+export interface Room
+{
+    board: Entity[][];
+    entities: Entity[];
 }
