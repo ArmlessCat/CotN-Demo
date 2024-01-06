@@ -3,7 +3,7 @@
 ## Work Items
 - Pick new background music, map out beats
 - ~Check for beat collisions on player movements, not just space bar~
-- Create BeatTracker.ts for beat management
+- ~Create BeatTracker.ts for beat management~
 - ~Create Player.ts for player state management~
 - Add training dummy enemy
 - Create the main menu scene
