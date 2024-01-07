@@ -4,7 +4,7 @@ import * as Schemas from './schemas';
 export class Player implements Schemas.Actor
 {
     level: Phaser.Scene;
-    board: Phaser.GameObjects.GameObject[][];
+    board: Schemas.Entity[][];
 
     sprite: Phaser.GameObjects.Sprite;
     isPlayerMoving: boolean;
@@ -16,7 +16,7 @@ export class Player implements Schemas.Actor
 
     readonly playerSpriteName = 'dude';
 
-    constructor (scene: Phaser.Scene, board: Phaser.GameObjects.GameObject[][])
+    constructor (scene: Phaser.Scene, board: Schemas.Entity[][])
     {
         // Initialize properties to default/starting values
         this.level = scene;
@@ -33,7 +33,7 @@ export class Player implements Schemas.Actor
 
         // Add the player to the board
         this.playerBoardPosition = {row: 0, col: 0};
-        board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this.sprite;
+        board[this.playerBoardPosition.row][this.playerBoardPosition.col] = this;
     }
 
     createPlayerAnimations()

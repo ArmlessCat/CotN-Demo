@@ -1,6 +1,6 @@
 import * as Phaser from 'phaser';
 import * as Schemas from './schemas';
-import * as Levels from './levels/level_1_1';
+import * as Levels from './levels/level';
 
 const config = {
     type: Phaser.AUTO,
@@ -13,7 +13,7 @@ const config = {
             debug: false
         }
     },
-    scene: Levels.Level_1_1
+    scene: Levels.Level
 };
 
 const game = new Phaser.Game(config);

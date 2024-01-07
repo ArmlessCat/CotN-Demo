@@ -2,21 +2,23 @@ import * as Phaser from 'phaser';
 import * as Schemas from '../schemas';
 import { BeatTracker } from '../BeatTracker';
 import { Player } from '../player';
+import { Room } from '../room';
 
-export class Level_1_1 extends Phaser.Scene implements Schemas.Level
+export class Level extends Phaser.Scene
 {
     map: Schemas.Room[][];
-    beatTracker: BeatTracker;
+    currentRoom: Schemas.Room;
+    startingRoom: Schemas.Room;
+
     entities: Schemas.Entity[];
 
-    // TODO: refactor this to only use the above interface properties
+    beatTracker: BeatTracker;
+
     cursorKeys: Phaser.Types.Input.Keyboard.CursorKeys;
-    board: Phaser.GameObjects.GameObject[][];
-    player: Player;
 
     constructor ()
     {
-        super('level_1_1');
+        super('level');
     }
 
     preload ()
@@ -52,28 +54,25 @@ export class Level_1_1 extends Phaser.Scene implements Schemas.Level
             this.beatTracker.startNoteCollision();
         });
 
-        // Initialize board
+        // Initialize all rooms in the level
         this.add.image(0, 0, 'background').setOrigin(0);
-        this.board = [];
-        for (let i = 0; i < Schemas.NUMBER_OF_SQUARES; i++)
-        {
-            this.board[i] = [];
-            for (let j = 0; j < Schemas.NUMBER_OF_SQUARES; j++)
-            {
-                this.board[i][j] = undefined;
-            }
-        }
 
-        // Initialize player
-        this.player = new Player(this, this.board);
+        // TODO: create map as defined by config passed through the constructor
+        this.startingRoom = new Room();
+        this.map = [[this.startingRoom]];
+
+        // Initialize entities
+        this.entities = [];
+        this.entities.push(new Player(this, this.startingRoom.board));
     }
 
     update ()
     {
-        // Player management
-        this.player.update();
+        for (const entity of this.entities)
+        {
+            entity.update();
+        }
 
-        // Beat tracker management
         this.beatTracker.update();
     }
 }
